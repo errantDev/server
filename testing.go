@@ -1,6 +1,9 @@
 package poker
 
-import "testing"
+import (
+	"io"
+	"testing"
+)
 
 type StubPlayerStore struct {
 	scores   map[string]int
@@ -33,4 +36,18 @@ func AssertPlayerWin(t testing.TB, store *StubPlayerStore, winner string) {
 	if got != want {
 		t.Errorf("did not get correct winner. got %s, want %s", got, want)
 	}
+}
+
+type GameSpy struct {
+	StartCalled  bool
+	StartedWith  int
+	FinishedWith string
+}
+
+func (g *GameSpy) Start(numberOfPlayers int, to io.Writer) {
+	g.StartCalled = true
+	g.StartedWith = numberOfPlayers
+}
+func (g *GameSpy) Finish(winner string) {
+	g.FinishedWith = winner
 }

@@ -3,6 +3,7 @@ package poker_test
 import (
 	"bytes"
 	"fmt"
+	"io"
 	poker "server"
 	"strings"
 	"testing"
@@ -72,7 +73,7 @@ func TestCLI(t *testing.T) {
 		stdout := &bytes.Buffer{}
 		in := strings.NewReader("7\n")
 
-		game := &GameSpy{}
+		game := &poker.GameSpy{}
 		cli := poker.NewCLI(in, stdout, game)
 		cli.PlayPoker()
 
@@ -85,7 +86,7 @@ func TestGame_Start(t *testing.T) {
 		blindAlerter := &SpyBlindAlerter{}
 		game := poker.NewTexasHoldem(blindAlerter, dummyPlayerStore)
 
-		game.Start(5)
+		game.Start(5, io.Discard)
 
 		cases := []scheduledAlert{
 			{0 * time.Second, 100},
@@ -107,7 +108,7 @@ func TestGame_Start(t *testing.T) {
 		blindAlerter := &SpyBlindAlerter{}
 		game := poker.NewTexasHoldem(blindAlerter, dummyPlayerStore)
 
-		game.Start(7)
+		game.Start(7, io.Discard)
 
 		cases := []scheduledAlert{
 			{0 * time.Second, 100},
@@ -120,7 +121,7 @@ func TestGame_Start(t *testing.T) {
 	t.Run("prints error when nonnumeric value is entered and does not start game", func(t *testing.T) {
 		stdout := &bytes.Buffer{}
 		in := strings.NewReader("Pies\n")
-		game := &GameSpy{}
+		game := &poker.GameSpy{}
 
 		cli := poker.NewCLI(in, stdout, game)
 		cli.PlayPoker()
@@ -133,7 +134,7 @@ func TestGame_Start(t *testing.T) {
 }
 
 func TestGame_Finish(t *testing.T) {
-	game := &GameSpy{}
+	game := &poker.GameSpy{}
 
 	winner := "Whiskyjack"
 
@@ -153,25 +154,11 @@ type scheduledAlert struct {
 	amount      int
 }
 
-type GameSpy struct {
-	StartCalled  bool
-	StartedWith  int
-	FinishedWith string
-}
-
-func (g *GameSpy) Start(numberOfPlayers int) {
-	g.StartCalled = true
-	g.StartedWith = numberOfPlayers
-}
-func (g *GameSpy) Finish(winner string) {
-	g.FinishedWith = winner
-}
-
 func (s *scheduledAlert) String() string {
 	return fmt.Sprintf("%d chips at %v", s.amount, s.scheduledAt)
 }
 
-func (s *SpyBlindAlerter) ScheduledAlertAt(duration time.Duration, amount int) {
+func (s *SpyBlindAlerter) ScheduledAlertAt(duration time.Duration, amount int, to io.Writer) {
 	s.alerts = append(s.alerts, scheduledAlert{duration, amount})
 }
 

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -14,12 +15,12 @@ type TexasHoldem struct {
 	store   PlayerStore
 }
 
-func (t *TexasHoldem) Start(numberOfPlayers int) {
+func (t *TexasHoldem) Start(numberOfPlayers int, to io.Writer) {
 	blindIncrement := time.Duration(5+numberOfPlayers) * time.Minute
 	blinds := []int{100, 200, 300, 400, 500, 600, 800, 1000, 2000, 4000, 8000}
 	blindTime := 0 * time.Second
 	for _, blind := range blinds {
-		t.alerter.ScheduledAlertAt(blindTime, blind)
+		t.alerter.ScheduledAlertAt(blindTime, blind, os.Stdout)
 		blindTime = blindTime + blindIncrement
 	}
 }
@@ -62,7 +63,7 @@ func (c *CLI) PlayPoker() {
 		fmt.Fprint(c.out, BadPlayerInputErrMsg)
 		return
 	}
-	c.game.Start(numberOfPlayers)
+	c.game.Start(numberOfPlayers, c.out)
 
 	winnerInput := c.readLine()
 	winner := extractWinner(winnerInput)
